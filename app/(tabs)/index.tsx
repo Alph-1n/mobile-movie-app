@@ -1,98 +1,114 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { images } from "@/constants/images";
+import { icons } from "@/constants/icons";
+import { Text, Image, ScrollView, View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
+import SearchBar from "@/components/SearchBar";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import useFetch from "@/Services/useFetch";
+import { fetchMovies } from "@/Services/api";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function Index() {
+  const router = useRouter();
+  
+  // Fetch latest movies (no query = popular movies)
+  const { 
+    data: movies, 
+    loading: moviesLoading, 
+    error: moviesError 
+  } = useFetch(() => fetchMovies({ query: '' }));
 
-export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView className="flex-1 bg-primary" edges={['top']}>
+      <View className="flex-1">
+        {/* Background image covers entire screen */}
+        <Image 
+          source={images.bg} 
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
+        
+        <ScrollView 
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ 
+            paddingHorizontal: 20,
+            paddingTop: 40,
+            paddingBottom: 100,
+            alignItems: 'center'
+          }}
+        >
+          {/* Logo at top center */}
+          <Image 
+            source={icons.logo} 
+            style={{ width: 48, height: 40, marginBottom: 20 }}
+            resizeMode="contain"
+          />
+          
+          {/* Search Bar - ALWAYS visible at top */}
+          <View className="w-full mb-5">
+            <SearchBar
+              onPress={() => {
+                router.push('/search');
+              }}
+              placeholder="Search for a movie"
             />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+          </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+          {/* Latest Movies Section */}
+          <View className="w-full">
+            <Text className="text-lg text-white font-bold mb-3">Latest Movies</Text>
+            
+            {/* Loading State */}
+            {moviesLoading ? (
+              <ActivityIndicator
+                size="large"
+                color='#A8B5DB'
+                className='mt-10 self-center'
+              />
+            ) : moviesError ? (
+              /* Error State - Show detailed error message */
+              <View className="mt-5 p-4 bg-red-500/20 rounded-lg">
+                <Text className="text-red-500 font-bold text-center mb-2">
+                  Error Fetching Movies
+                </Text>
+                <Text className="text-red-400 text-sm text-center">
+                  {moviesError?.message || 'Failed to fetch data from server'}
+                </Text>
+                <Text className="text-red-400 text-xs text-center mt-2">
+                  Please check your API key and internet connection
+                </Text>
+              </View>
+            ) : movies && movies.length > 0 ? (
+              /* Success State - Show movies */
+              <FlatList
+                data={movies}
+                renderItem={({ item }) => (
+                  <View className="bg-white/10 rounded-lg p-2 mb-2">
+                    <Text className="text-white text-sm font-semibold" numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                  </View>
+                )}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={3}
+                columnWrapperStyle={{ 
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  marginBottom: 10
+                }}
+                scrollEnabled={false}
+              />
+            ) : (
+              /* Empty State - No movies found */
+              <View className="mt-5 p-4 bg-yellow-500/20 rounded-lg">
+                <Text className="text-yellow-500 text-center">
+                  No movies found
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
