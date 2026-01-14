@@ -15,7 +15,7 @@ export default function Index() {
     data: movies, 
     loading: moviesLoading, 
     error: moviesError 
-  } = useFetch(() => fetchMovies({ query: '' }));
+  } = useFetch(() => fetchMovies({ query: '' })); //tyoe inside '' to get the movies like iron man
 
   return (
     <SafeAreaView className="flex-1 bg-primary" edges={['top']}>
