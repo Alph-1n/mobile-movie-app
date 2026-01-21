@@ -66,8 +66,11 @@ const Profile = () => {
     let allRecordings = [...recordings];
     const { sound, status } = await recording.createNewLoadedSoundAsync();
     
-    // FIXED: Check if status has durationMillis
-    const duration = status.durationMillis || 0;
+    const duration =
+    status.isLoaded && status.durationMillis
+      ? status.durationMillis
+      : 0;
+  ;
     
     allRecordings.push({
       sound: sound,
@@ -195,7 +198,7 @@ const Profile = () => {
     style={styles.psalmScroll}
     showsVerticalScrollIndicator={false}
   >
-    {PSALM_1.slice(0, 3).map((item) => (
+    {PSALM_1.slice(0, 5).map((item) => (
       <TouchableOpacity
         key={item.verse}
         style={styles.verseCard}
@@ -212,9 +215,13 @@ const Profile = () => {
       </View>
       <Modal visible={!!selectedVerse} animationType="slide">
   <SafeAreaView className="flex-1 bg-primary">
-    <View style={{ flex: 1, padding: 20 }}>
-      
-      {/* Close Button */}
+    
+    {/* Verse Content */}
+    <ScrollView
+      contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Close */}
       <TouchableOpacity
         onPress={() => setSelectedVerse(null)}
         style={{ marginBottom: 20 }}
@@ -222,7 +229,6 @@ const Profile = () => {
         <Ionicons name="close" size={32} color="#FFFFFF" />
       </TouchableOpacity>
 
-      {/* Verse Content */}
       {selectedVerse && (
         <>
           <Text style={styles.fullVerseTitle}>
@@ -233,9 +239,40 @@ const Profile = () => {
           </Text>
         </>
       )}
+    </ScrollView>
+
+    {/*  MEDIA NAVBAR */}
+    <View style={styles.mediaNavbar}>
+      
+      <TouchableOpacity>
+        <Ionicons name="play" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity>
+        <Ionicons name="pause" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity>
+        <Ionicons name="mic" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity>
+        <Ionicons name="square" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity>
+        <Ionicons name="play-skip-forward" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity>
+        <Ionicons name="share-outline" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
     </View>
+
   </SafeAreaView>
 </Modal>
+
 
     </SafeAreaView>
   );
@@ -322,6 +359,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 20,
     lineHeight: 30,
+  },
+  mediaNavbar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    backgroundColor: 'rgba(15, 13, 35, 0.95)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 12,
   },
   
 });
