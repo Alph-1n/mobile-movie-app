@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, StyleSheet, Button } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, Button,Alert } from 'react-native';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { images } from '@/constants/images';
@@ -6,6 +6,9 @@ import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 import { Modal } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+
 
 const Profile = () => {
   const [recording, setRecording] = React.useState<Audio.Recording | undefined>();
@@ -58,8 +61,7 @@ const Profile = () => {
     }
   ];
 
-  //for unloading audio
-  // for unloading audio 
+  //for unloading audio 
   async function safelyUnloadSound(sound: Audio.Sound | null) {
     if (!sound) return;
 
@@ -74,7 +76,7 @@ const Profile = () => {
     }
   }
 
-
+  //start recording and stop recording
   async function startRecording() {
     try {
       const perm = await Audio.requestPermissionsAsync();
@@ -173,7 +175,7 @@ const Profile = () => {
     }
     setRecordings([]);
   }
-
+ 
   // NEW: Modal audio functions
   async function playModalAudio() {
     if (!selectedVerse) return;
@@ -333,6 +335,58 @@ const Profile = () => {
     }
   }
 
+  //export audio
+  async function exportAudio() {
+    if (!selectedVerse) {
+      Alert.alert('Error', 'No verse selected');
+      return;
+    }
+
+    try {
+      // Check if user has recorded audio for this verse
+      const userRecording = verseRecordings[selectedVerse.verse];
+
+      if (!userRecording?.file) {
+        // Check if pre-loaded audio exists
+        if (VERSE_AUDIO[selectedVerse.verse]) {
+          Alert.alert(
+            'Export Audio',
+            'Only recorded audio can be exported. Would you like to record this verse?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Record Now', onPress: startModalRecording }
+            ]
+          );
+        } else {
+          Alert.alert('No Audio', 'No audio available for this verse');
+        }
+        return;
+      }
+
+      const audioUri = userRecording.file;
+
+      // Check if sharing is available
+      const available = await Sharing.isAvailableAsync();
+
+      if (!available) {
+        Alert.alert('Error', 'Sharing is not available on this device');
+        return;
+      }
+
+      // Share the audio file directly
+      await Sharing.shareAsync(audioUri, {
+        mimeType: 'audio/m4a',
+        dialogTitle: `Export Psalm 1:${selectedVerse.verse}`,
+      });
+
+      console.log('Audio exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Export Failed', 'Could not export audio. Please try again.');
+    }
+  }
+
+
   return (
     <SafeAreaView className="flex-1 bg-primary" edges={['top']}>
       <View className="flex-1">
@@ -484,7 +538,7 @@ const Profile = () => {
             </TouchableOpacity>
 
             {/* Share (placeholder) */}
-            <TouchableOpacity>
+            <TouchableOpacity onPress={exportAudio}>
               <Ionicons name="share-outline" size={26} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
