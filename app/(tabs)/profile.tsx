@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, StyleSheet, Button,Alert } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, Button, Alert } from 'react-native';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { images } from '@/constants/images';
@@ -9,7 +9,6 @@ import { Modal } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
-
 
 const Profile = () => {
   const [recording, setRecording] = React.useState<Audio.Recording | undefined>();
@@ -176,7 +175,7 @@ const Profile = () => {
     }
     setRecordings([]);
   }
- 
+
   // NEW: Modal audio functions
   async function playModalAudio() {
     if (!selectedVerse) return;
@@ -342,7 +341,7 @@ const Profile = () => {
       Alert.alert('Error', 'No verse selected');
       return;
     }
-  
+
     const userRecording = verseRecordings[selectedVerse.verse];
     if (!userRecording?.file) {
       Alert.alert(
@@ -351,7 +350,7 @@ const Profile = () => {
       );
       return;
     }
-  
+
     // 🌐 WEB: FileSystem + Sharing DO NOT EXIST
     if (Platform.OS === 'web') {
       Alert.alert(
@@ -360,28 +359,24 @@ const Profile = () => {
       );
       return;
     }
-  
+
     try {
       const available = await Sharing.isAvailableAsync();
       if (!available) {
         Alert.alert('Sharing not available');
         return;
       }
-  
+
       // ✅ DIRECT SHARE — NO directories
       await Sharing.shareAsync(userRecording.file, {
         dialogTitle: `Export Psalm 1:${selectedVerse.verse}`,
       });
-  
+
     } catch (err) {
       console.error('Export error:', err);
       Alert.alert('Export Failed', 'Unable to export audio.');
     }
   }
-  
-  
-  
-
 
   return (
     <SafeAreaView className="flex-1 bg-primary" edges={['top']}>
