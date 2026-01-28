@@ -9,6 +9,7 @@ import { Modal } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import { Asset } from 'expo-asset';
 
 const Profile = () => {
   const [recording, setRecording] = React.useState<Audio.Recording | undefined>();
@@ -336,47 +337,78 @@ const Profile = () => {
   }
 
   //export audio
-  async function exportAudio() {
-    if (!selectedVerse) {
-      Alert.alert('Error', 'No verse selected');
-      return;
-    }
+//export audio
+async function exportAudio() {
+  if (!selectedVerse) {
+    Alert.alert('Error', 'No verse selected');
+    return;
+  }
 
+  // Check for web platform
+  if (Platform.OS === 'web') {
+    Alert.alert(
+      'Not Supported on Web',
+      'Audio export is only supported on Android and iOS.'
+    );
+    return;
+  }
+
+  try {
+    let audioUri: string | null = null;
+    
+    // Priority 1: User recorded audio
     const userRecording = verseRecordings[selectedVerse.verse];
-    if (!userRecording?.file) {
-      Alert.alert(
-        'No Exportable Audio',
-        'Please record this verse first.'
-      );
-      return;
-    }
-
-    // 🌐 WEB: FileSystem + Sharing DO NOT EXIST
-    if (Platform.OS === 'web') {
-      Alert.alert(
-        'Not Supported on Web',
-        'Audio export is only supported on Android and iOS.'
-      );
-      return;
-    }
-
-    try {
-      const available = await Sharing.isAvailableAsync();
-      if (!available) {
-        Alert.alert('Sharing not available');
+    if (userRecording?.file) {
+      audioUri = userRecording.file;
+      console.log('Exporting user recording:', audioUri);
+    } 
+    // Priority 2: Pre-loaded audio from assets
+    else if (VERSE_AUDIO[selectedVerse.verse]) {
+      try {
+        // For bundled assets, use expo-asset
+        const { Asset } = require('expo-asset');
+        const asset = Asset.fromModule(VERSE_AUDIO[selectedVerse.verse]);
+        await asset.downloadAsync();
+        
+        // Use the asset's URI directly - no need to copy
+        audioUri = asset.localUri || asset.uri;
+        console.log('Exporting pre-loaded audio:', audioUri);
+      } catch (assetError) {
+        console.error('Asset loading failed:', assetError);
+        Alert.alert(
+          'Export Failed',
+          'Could not export pre-loaded audio. Please record your own version instead.'
+        );
         return;
       }
-
-      // ✅ DIRECT SHARE — NO directories
-      await Sharing.shareAsync(userRecording.file, {
-        dialogTitle: `Export Psalm 1:${selectedVerse.verse}`,
-      });
-
-    } catch (err) {
-      console.error('Export error:', err);
-      Alert.alert('Export Failed', 'Unable to export audio.');
+    } else {
+      Alert.alert('No Audio', 'No audio available for this verse');
+      return;
     }
+
+    if (!audioUri) {
+      Alert.alert('Error', 'Could not locate audio file');
+      return;
+    }
+
+    // Check if sharing is available
+    const available = await Sharing.isAvailableAsync();
+    if (!available) {
+      Alert.alert('Sharing not available on this device');
+      return;
+    }
+
+    // Share the audio file
+    await Sharing.shareAsync(audioUri, {
+      dialogTitle: `Export Psalm 1:${selectedVerse.verse}`,
+    });
+
+    console.log('Audio exported successfully');
+  } catch (err) {
+    console.error('Export error:', err);
+    Alert.alert('Export Failed', 'Unable to export audio.');
   }
+}
 
   return (
     <SafeAreaView className="flex-1 bg-primary" edges={['top']}>

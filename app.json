@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "MoviezFlix",
-    "slug": "mobile_movie_app", 
+    "slug": "mobile_movie_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -38,7 +38,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
