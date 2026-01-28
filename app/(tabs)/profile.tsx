@@ -8,6 +8,7 @@ import { TouchableOpacity } from 'react-native';
 import { Modal } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 
 
 const Profile = () => {
@@ -341,50 +342,45 @@ const Profile = () => {
       Alert.alert('Error', 'No verse selected');
       return;
     }
-
+  
+    const userRecording = verseRecordings[selectedVerse.verse];
+    if (!userRecording?.file) {
+      Alert.alert(
+        'No Exportable Audio',
+        'Please record this verse first.'
+      );
+      return;
+    }
+  
+    // 🌐 WEB: FileSystem + Sharing DO NOT EXIST
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Not Supported on Web',
+        'Audio export is only supported on Android and iOS.'
+      );
+      return;
+    }
+  
     try {
-      // Check if user has recorded audio for this verse
-      const userRecording = verseRecordings[selectedVerse.verse];
-
-      if (!userRecording?.file) {
-        // Check if pre-loaded audio exists
-        if (VERSE_AUDIO[selectedVerse.verse]) {
-          Alert.alert(
-            'Export Audio',
-            'Only recorded audio can be exported. Would you like to record this verse?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Record Now', onPress: startModalRecording }
-            ]
-          );
-        } else {
-          Alert.alert('No Audio', 'No audio available for this verse');
-        }
-        return;
-      }
-
-      const audioUri = userRecording.file;
-
-      // Check if sharing is available
       const available = await Sharing.isAvailableAsync();
-
       if (!available) {
-        Alert.alert('Error', 'Sharing is not available on this device');
+        Alert.alert('Sharing not available');
         return;
       }
-
-      // Share the audio file directly
-      await Sharing.shareAsync(audioUri, {
-        mimeType: 'audio/m4a',
+  
+      // ✅ DIRECT SHARE — NO directories
+      await Sharing.shareAsync(userRecording.file, {
         dialogTitle: `Export Psalm 1:${selectedVerse.verse}`,
       });
-
-      console.log('Audio exported successfully');
-    } catch (error) {
-      console.error('Export error:', error);
-      Alert.alert('Export Failed', 'Could not export audio. Please try again.');
+  
+    } catch (err) {
+      console.error('Export error:', err);
+      Alert.alert('Export Failed', 'Unable to export audio.');
     }
   }
+  
+  
+  
 
 
   return (
