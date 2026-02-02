@@ -337,7 +337,6 @@ const Profile = () => {
   }
 
   //export audio
-//export audio
 async function exportAudio() {
   if (!selectedVerse) {
     Alert.alert('Error', 'No verse selected');
